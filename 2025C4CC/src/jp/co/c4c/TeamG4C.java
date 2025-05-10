@@ -36,6 +36,9 @@ public class TeamG4C {
      * @return
      */
     public Card tactics2(int turn, List<Card> p1History, List<Card> p2History) {
+        if (true) {
+            // テスト
+        }
         // 今はランダムで返す
         Random random = new Random();
         return random.nextBoolean() ? Card.COOPERATE : Card.BETRAY;
