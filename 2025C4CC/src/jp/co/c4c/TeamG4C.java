@@ -38,10 +38,10 @@ public class TeamG4C {
     public Card tactics2(int turn, List<Card> p1History, List<Card> p2History) {
 
         // フェーズ1
-        int phese1 = 50;
+        final int PHESE1_END_TURN = 50;
 
-        // フェーズ2
-        int phese2 = 51;
+        // フェーズ2で使用するしきい値
+        final int COOPERATION_THRESHOLD = 25;
 
         // 合計協力回数
         int cooperateCount = 0;
@@ -55,55 +55,64 @@ public class TeamG4C {
         // 連続裏切り回数
         int consecutiveBetrayalCount = 0;
 
-        if (turn <= phese1) {
+        // 相手の協力
+        final double COOPERATION_RATE_THRESHOLD = 0.5;
+
+        // 直近3ターン
+        final int RECENT_TURN_COUNT = 3;
+
+        // フェーズ1は「裏切り」を固定
+        if (turn <= PHESE1_END_TURN) {
             return Card.BETRAY;
-        } else if (turn == phese2) {
+        }
+
+        // フェーズ2
+        if (turn == PHESE1_END_TURN + 1) {
+            // フェーズ1での相手の「協力」回数をカウント
             for (int i = 0; i < p2History.size(); i++) {
                 if (p2History.get(i) == Card.COOPERATE) {
                     cooperateCount += 1;
                 }
             }
 
-            if (cooperateCount <= 25) {
+            // 相手の協力回数が25回以下だった場合、裏切り
+            if (cooperateCount <= COOPERATION_THRESHOLD) {
                 return Card.BETRAY;
             } else {
                 return Card.COOPERATE;
             }
+        }
+        // フェーズ3
+        // 協力回数をカウント
+        for (int i = 0; i < p2History.size(); i++) {
+            if (p2History.get(i) == Card.COOPERATE) {
+                cooperateCount += 1;
+            }
+        }
+
+        // 協力率を算出
+        cooperateRate = (double) cooperateCount / p2History.size();
+
+        if (cooperateRate >= COOPERATION_RATE_THRESHOLD) {
+            for (int i = p2History.size() - 1; i >= p2History.size() - RECENT_TURN_COUNT; i--) {
+                if (p2History.get(i) == Card.BETRAY) {
+                    consecutiveBetrayalCount += 1;
+                }
+            }
+            if (consecutiveBetrayalCount == RECENT_TURN_COUNT) {
+                return Card.BETRAY;
+            }
+            return Card.COOPERATE;
         } else {
-            consecutiveBetrayalCount = 0;
-            consecutiveCooperateCount = 0;
-
-            for (int i = 0; i < p2History.size(); i++) {
+            for (int i = p2History.size() - 1; i >= p2History.size() - RECENT_TURN_COUNT; i--) {
                 if (p2History.get(i) == Card.COOPERATE) {
-                    cooperateCount += 1;
+                    consecutiveCooperateCount += 1;
                 }
             }
-
-            // 協力率を算出
-            cooperateRate = (double) cooperateCount / p2History.size();
-
-            System.out.println("相手の協力率 " + cooperateRate);
-            if (cooperateRate >= 0.5) {
-                for (int i = p2History.size() - 1; i >= p2History.size() - 3; i--) {
-                    if (p2History.get(i) == Card.BETRAY) {
-                        consecutiveBetrayalCount += 1;
-                    }
-                }
-                if (consecutiveBetrayalCount == 3) {
-                    return Card.BETRAY;
-                }
+            if (consecutiveCooperateCount == RECENT_TURN_COUNT) {
                 return Card.COOPERATE;
-            } else {
-                for (int i = p2History.size() - 1; i >= p2History.size() - 3; i--) {
-                    if (p2History.get(i) == Card.COOPERATE) {
-                        consecutiveCooperateCount += 1;
-                    }
-                }
-                if (consecutiveCooperateCount == 3) {
-                    return Card.COOPERATE;
-                }
-                return Card.BETRAY;
             }
+            return Card.BETRAY;
         }
 
     }
