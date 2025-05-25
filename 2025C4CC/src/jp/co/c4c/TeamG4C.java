@@ -26,6 +26,7 @@ public class TeamG4C {
         // 今はランダムで返す
         Random random = new Random();
         return random.nextBoolean() ? Card.COOPERATE : Card.BETRAY;
+        //TEST 101
     }
 
     /**
