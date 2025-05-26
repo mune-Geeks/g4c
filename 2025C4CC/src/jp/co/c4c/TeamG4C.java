@@ -35,30 +35,28 @@ public class TeamG4C {
 
         // 11～80ターン
         int opponentCooperateCount = 0;
-        if (turn <= 80) { // 相手の「協力」の割合（1～前回ターン数までの合計）によって3パターンの行動を切り替える
-            // 相手の「協力」回数をカウント
-            for (int i = 0; i < p2History.size(); i++) {
-                // 81ターン以降はカウントしない
-                if (i > 80) { break; }
-                Card p2Move = p2History.get(i);
-                if (p2Move == Card.COOPERATE) {
-                    opponentCooperateCount++;
-                }
+        for (int i = 0; i < p2History.size(); i++) {
+            // 81ターン以降はカウントしない
+            if (i > 80) { break; }
+            Card p2Move = p2History.get(i);
+            if (p2Move == Card.COOPERATE) {
+                opponentCooperateCount++;
             }
+        }
 
-            System.out.println("相手の「協力」回数: " + opponentCooperateCount + " / " + p2History.size() + "ターン");
-
+        if (turn <= 80) { // 相手の「協力」率（1～前回ターン数までの合計）によって3パターンの行動を切り替える
+            // 相手の「協力」率を算出
             double coopRatio = (double) opponentCooperateCount / turn; // opponentCooperateCountをdoubleに変換すれば小数の計算ができるようになる
 
-            // パターン①：相手の「協力」回数が30%未満
+            // パターン①：相手の「協力」率が30%未満
             if (coopRatio < COOPERATE_RATE_LOW) {
-                System.out.println("→ 相手の「協力」回数が30%未満 → 裏切りを出す");
+                System.out.println("→ 相手の「協力」率が30%未満 → 裏切りを出す");
                 return Card.BETRAY;
             }
-            // パターン②：相手の「協力」回数が30%以上70％未満
+            // パターン②：相手の「協力」率が30%以上70％未満
             if (coopRatio < COOPERATE_RATE_HIGH) {
                 Card lastMyMove = p1History.get(p1History.size() -1);
-                System.out.println("→ 相手の「協力」回数が30%以上70%未満 → 自分の前回の行動\"" + lastMyMove + "\"と逆の行動を取る");
+                System.out.println("→ 相手の「協力」率が30%以上70%未満 → 自分の前回の行動\"" + lastMyMove + "\"と逆の行動を取る");
 
                 if (lastMyMove == Card.COOPERATE) { // 自分の前回の行動が「協力」→「裏切り」を出す
                     return Card.BETRAY;
@@ -67,12 +65,12 @@ public class TeamG4C {
                 }
             }
 
-            // パターン③：相手の「協力」回数が70%以上
-            System.out.println("→ 相手の「協力」回数が70%以上 → 協力を出す");
+            // パターン③：相手の「協力」率が70%以上
+            System.out.println("→ 相手の「協力」率が70%以上 → 協力を出す");
             return Card.COOPERATE;
         }
         // 81～100ターン
-        System.out.println("相手の協力回数（1〜80ターン）: " + opponentCooperateCount);
+        System.out.println("相手の「協力」回数（1〜80ターン）: " + opponentCooperateCount);
 
         // パターン①：相手の「協力」回数が59回以下
         if (opponentCooperateCount <= 59) {
