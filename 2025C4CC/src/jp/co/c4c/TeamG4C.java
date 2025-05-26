@@ -50,31 +50,38 @@ public class TeamG4C {
      */
     public Card tactics3(int turn, List<Card> p1History, List<Card> p2History) {
 
-        // 相手の行動履歴リストをpreviousMoveに設定
-        final List<Card> previousMove = p2History;
+        // １ターン目は「協力」のカードを出す
+        if (turn == 1) {
+            return Card.COOPERATE;
+        }
 
-        // 相手の行動履歴リストの要素数を取得
-        final int previousMoveSize = previousMove.size();
+        // 怒りポイントの下限値
+        final int ANGER_POINTS_MIN = 0;
+        // 怒りポイントの上限値
+        final int ANGER_POINTS_MAX = 3;
+        // 怒りのライン
+        final int ANGER_THRESHOLD = 1;
 
         // 怒りポイント初期値を設定
         int angerPoints = 0;
 
-        // 最初のターンから現在のターンまでの相手の行動履歴を取得して怒りポイントを計算
-        for (int i = 0; i < previousMoveSize; i++) {
+        // 相手の行動履歴を取得して怒りポイントを計算(ANGER_POINTS_MIN～ANGER_POINTS_MAXで変動)
+        for (Card p2Card : p2History) {
             // 協力なら－１、裏切りなら＋１
-            angerPoints = previousMove.get(i) == Card.COOPERATE ? angerPoints -1 : angerPoints + 1;
+            angerPoints += p2Card == Card.COOPERATE ? -1 : +1;
+
             // 怒りポイントが－１以下なら０を設定
-            if (angerPoints < 0) {
-                angerPoints = 0;
+            if (angerPoints < ANGER_POINTS_MIN) {
+                angerPoints = ANGER_POINTS_MIN;
             }
             // 怒りポイントが４以上なら３を設定
-            if (angerPoints > 3) {
-                angerPoints = 3;
+            if (angerPoints > ANGER_POINTS_MAX) {
+                angerPoints = ANGER_POINTS_MAX;
             }
         }
 
-        // 怒りポイントが２以上なら「裏切り」、２未満なら「協力」を返す
-        return angerPoints > 1 ? Card.BETRAY : Card.COOPERATE;
+        // 怒りポイントがANGER_THRESHOLDを超えたら「裏切り」のカードを出す
+        return angerPoints > ANGER_THRESHOLD ? Card.BETRAY : Card.COOPERATE;
 
     }
 
