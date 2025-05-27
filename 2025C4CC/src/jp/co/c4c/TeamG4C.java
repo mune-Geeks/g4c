@@ -11,7 +11,6 @@ public class TeamG4C {
 
     /**
      * 報酬計算
-     * 
      * @param reward
      */
     public void addReward(int reward) {
@@ -20,145 +19,161 @@ public class TeamG4C {
 
     /**
      * 作戦1 鈴木＋シヌアン作戦
-     * 
-     * @param turn
-     * @param p1History
-     * @param p2History
-     * @return
+     *
+     * @param turn 現在のターン数
+     * @param p1History 自分（プレイヤー1）の行動履歴
+     * @param p2History 相手（プレイヤー2）の行動履歴
+     * @return 次の行動（協力または裏切り）
      */
     public Card tactics1(int turn, List<Card> p1History, List<Card> p2History) {
         Random random = new Random();
 
+        // 1〜100ターン：鈴木作戦（仮）→ ランダムで協力または裏切り
         if (turn <= 100) {
-            // 鈴木作戦が未実装のためランダムな選択を行う
             return random.nextBoolean() ? Card.COOPERATE : Card.BETRAY;
         }
 
-        // 101~200ターン: シヌアン作戦開始
-        int relativeTurn = turn - 100;
+        // --- フェーズ境界の定義 ---
+        final int PHASE1_START = 101;
+        final int PHASE1_2_START = 106;
+        final int PHASE1_3_START = 131;
+        final int PHASE2_START = 151;
+        final int PHASE3_START = 156;
+        final int PHASE4_START = 161;
 
-        // フェーズ1: (101-105)
-        if (relativeTurn <= 5) {
-            return Card.COOPERATE;
-        }
+        // --- 協力確率（0〜99） ---
+        final int COOP_PROB_85 = 85;
+        final int COOP_PROB_50 = 50;
+        final int COOP_PROB_25 = 25;
+        final int COOP_PROB_65 = 65;
+        final int COOP_PROB_30 = 30;
+        final int COOP_PROB_15 = 15;
 
-        // フェーズ2: (106-130)
-        if (relativeTurn <= 30) {
-            int recentStart = turn - 4;
-            if (recentStart < 1)
-                recentStart = 1;
-            int fromIdx = Math.max(0, recentStart);
-            int toIdx = Math.max(0, turn - 1);
-            if (fromIdx >= p2History.size())
-                fromIdx = p2History.size();
-            if (toIdx > p2History.size())
-                toIdx = p2History.size();
-            List<Card> recent = p2History.subList(fromIdx, toIdx);
-
-            // パターンを解析
-            String pattern = recent.stream()
-                    .map(Card::getLabel)
-                    .reduce("", (a, b) -> a + b);
-
-            if (pattern.endsWith("協力協力協力")) {
-                return random.nextDouble() < 0.8 ? Card.COOPERATE : Card.BETRAY;
-            } else if (pattern.endsWith("協力協力裏切り")) {
-                return Card.BETRAY;
-            } else if (pattern.endsWith("協力裏切り")) {
-                return Card.BETRAY;
-            } else if (pattern.endsWith("裏切り裏切り")) {
-                return Card.BETRAY;
-            } else {
-                return random.nextBoolean() ? Card.COOPERATE : Card.BETRAY;
-            }
-        }
-
-        if (relativeTurn <= 50) {
-            int recentStart = turn - 10;
-            if (recentStart < 0)
-                recentStart = 0;
-            int fromIdx = recentStart;
-            int toIdx = turn - 1;
-            if (fromIdx >= p2History.size())
-                fromIdx = p2History.size();
-            if (toIdx > p2History.size())
-                toIdx = p2History.size();
-            long coopCount = p2History.subList(fromIdx, toIdx).stream()
-                    .filter(card -> card == Card.COOPERATE).count();
-            double rate = coopCount / 10.0;
-            double r = random.nextDouble();
-            if (rate >= 0.7) {
-                return r < 0.85 ? Card.COOPERATE : Card.BETRAY;
-            } else if (rate >= 0.5) {
-                return r < 0.5 ? Card.COOPERATE : Card.BETRAY;
-            } else {
-                return r < 0.25 ? Card.COOPERATE : Card.BETRAY;
-            }
-        }
-
-        // フェーズ3: (151-200)
-        if (relativeTurn <= 55) {
-            return Card.COOPERATE; // 151-155: 全て協力し様子を見る
-        }
-
-        int coopCount = 0;
-        for (int i = 150; i < 155 && i < p2History.size(); i++) {
-            if (p2History.get(i) == Card.COOPERATE)
-                coopCount++;
-        }
-
-        if (coopCount >= 4) {
-            if (relativeTurn <= 60)
+        // --- フェーズ1：101〜150 ---
+        if (turn < PHASE2_START) {
+            // フェーズ1-1：101〜105 → 無条件で協力
+            if (turn < PHASE1_2_START) {
                 return Card.COOPERATE;
-        } else {
-            if (relativeTurn == 56)
-                return Card.COOPERATE;
-            int betrayCount = 0;
-            for (int i = 151; i < turn && i < p2History.size(); i++) {
-                if (p2History.get(i) == Card.BETRAY)
-                    betrayCount++;
             }
-            if (betrayCount >= 2)
-                return Card.BETRAY;
-        }
 
-        int betrayCount = 0;
-        for (int i = 150; i < turn - 1 && i < p2History.size(); i++) {
-            if (p2History.get(i) == Card.BETRAY)
-                betrayCount++;
-        }
+            // フェーズ1-2：106〜130 → 「協力・協力・裏切り」の3ターンパターン
+            if (turn < PHASE1_3_START) {
+                Card[] pattern = { Card.COOPERATE, Card.COOPERATE, Card.BETRAY };
+                int patternIndex = (turn - PHASE1_2_START) % 3;
+                return pattern[patternIndex];
+            }
 
-        if (betrayCount <= 2)
-            return Card.COOPERATE;
-        if (betrayCount <= 4) {
-            if (turn - 2 >= 0 && turn - 3 >= 0 && turn - 2 < p2History.size() && turn - 3 < p2History.size()) {
-                if (p2History.get(turn - 2) == Card.BETRAY && p2History.get(turn - 3) == Card.BETRAY) {
-                    return Card.BETRAY;
+            // フェーズ1-3：131〜150 → 相手の直近10ターンの協力率で確率選択
+
+            int recentTurns = 10;
+
+            int rawStart = turn - recentTurns - 1;
+            int rawEnd = turn - 1;
+
+            int startIdx = Math.max(0, rawStart);
+            int endIdx = Math.min(p2History.size(), rawEnd);
+
+            if (endIdx > startIdx) {
+                int coopCount = 0;
+                for (int i = startIdx; i < endIdx; i++) {
+                    if (p2History.get(i) == Card.COOPERATE) {
+                        coopCount++;
+                    }
+                }
+
+                double coopRate = (double) coopCount / (endIdx - startIdx);
+
+                if (coopRate >= 0.7) {
+                    return (random.nextInt(100) < COOP_PROB_85) ? Card.COOPERATE : Card.BETRAY;
+                } else if (coopRate >= 0.5) {
+                    return (random.nextInt(100) < COOP_PROB_50) ? Card.COOPERATE : Card.BETRAY;
+                } else {
+                    return (random.nextInt(100) < COOP_PROB_25) ? Card.COOPERATE : Card.BETRAY;
                 }
             }
-            return random.nextDouble() < 0.65 ? Card.COOPERATE : Card.BETRAY;
-        }
-        if (betrayCount < 9) {
-            return random.nextDouble() < 0.3 ? Card.COOPERATE : Card.BETRAY;
+            return Card.COOPERATE; // フォールバック
         }
 
-        // betrayCount >= 9
-        boolean lastFourCoop = true;
-        for (int i = turn - 5; i < turn - 1; i++) {
-            if (i < 0 || i >= p2History.size() || p2History.get(i) != Card.COOPERATE) {
-                lastFourCoop = false;
-                break;
+        // --- フェーズ2：151〜155 → 無条件で協力 ---
+        if (turn < PHASE3_START) {
+            return Card.COOPERATE;
+        }
+
+        // --- フェーズ3：156〜160 ---
+        if (turn < PHASE4_START) {
+            // 直前フェーズ（151〜155）での相手の協力回数をカウント
+            int phase2CoopCount = 0;
+            for (int i = PHASE2_START - 1; i < PHASE3_START - 1 && i < p2History.size(); i++) {
+                if (p2History.get(i) == Card.COOPERATE) {
+                    phase2CoopCount++;
+                }
+            }
+
+            // 4回以上協力されていれば全面協力
+            if (phase2CoopCount >= 4) {
+                return Card.COOPERATE;
+            }
+
+            // 最初のターン（156）は協力
+            if (turn == PHASE3_START) {
+                return Card.COOPERATE;
+            }
+
+            // 156〜現在までの裏切り回数をカウント
+            int betrayCountFromPhase3 = 0;
+            for (int i = PHASE3_START - 1; i < turn - 1 && i < p2History.size(); i++) {
+                if (p2History.get(i) == Card.BETRAY) {
+                    betrayCountFromPhase3++;
+                }
+            }
+
+            // 2回以上裏切られたら裏切る
+            return (betrayCountFromPhase3 >= 2) ? Card.BETRAY : Card.COOPERATE;
+        }
+
+        // --- フェーズ4：161〜200 ---
+        int totalBetrayCount = 0;
+        for (int i = PHASE2_START - 1; i < turn - 1 && i < p2History.size(); i++) {
+            if (p2History.get(i) == Card.BETRAY) {
+                totalBetrayCount++;
             }
         }
-        if (lastFourCoop)
-            return Card.COOPERATE;
 
-        return random.nextDouble() < 0.15 ? Card.COOPERATE : Card.BETRAY;
+        if (totalBetrayCount <= 2) {
+            return Card.COOPERATE;
+        } else if (totalBetrayCount <= 4) {
+            // 直近2ターン連続裏切りチェック
+            if (p2History.size() >= 2) {
+                int lastIdx = p2History.size() - 1;
+                int secondLastIdx = p2History.size() - 2;
+                if (p2History.get(lastIdx) == Card.BETRAY && p2History.get(secondLastIdx) == Card.BETRAY) {
+                    return Card.BETRAY; // 強い報復（簡略化で1ターンのみ）
+                }
+            }
+            return (random.nextInt(100) < COOP_PROB_65) ? Card.COOPERATE : Card.BETRAY;
+        } else if (totalBetrayCount < 9) {
+            return (random.nextInt(100) < COOP_PROB_30) ? Card.COOPERATE : Card.BETRAY;
+        } else {
+            // 相手が直近4ターン協力しているかチェック
+            if (p2History.size() >= 4) {
+                boolean fourConsecutiveCoop = true;
+                for (int i = p2History.size() - 4; i < p2History.size(); i++) {
+                    if (p2History.get(i) != Card.COOPERATE) {
+                        fourConsecutiveCoop = false;
+                        break;
+                    }
+                }
+                if (fourConsecutiveCoop) {
+                    return Card.COOPERATE;
+                }
+            }
+            return (random.nextInt(100) < COOP_PROB_15) ? Card.COOPERATE : Card.BETRAY;
+        }
     }
 
     /**
      * 作戦2 吉田作戦
-     * 
+     *
      * @param turn
      * @param p1History
      * @param p2History
@@ -172,7 +187,7 @@ public class TeamG4C {
 
     /**
      * 作戦3 錦作戦
-     * 
+     *
      * @param turn
      * @param p1History
      * @param p2History
