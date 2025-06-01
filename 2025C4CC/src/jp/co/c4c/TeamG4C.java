@@ -51,13 +51,11 @@ public class TeamG4C {
 
             // パターン①：相手の「協力」率が30%未満
             if (coopRatio < COOPERATE_RATE_LOW) {
-                // System.out.println("→ 相手の「協力」率が30%未満 → 裏切りを出す");
                 return Card.BETRAY;
             }
             // パターン②：相手の「協力」率が30%以上70％未満
             if (coopRatio < COOPERATE_RATE_HIGH) {
                 Card lastMyMove = p1History.get(p1History.size() -1);
-                // System.out.println("→ 相手の「協力」率が30%以上70%未満 → 自分の前回の行動\"" + lastMyMove + "\"と逆の行動を取る");
 
                 if (lastMyMove == Card.COOPERATE) { // 自分の前回の行動が「協力」→「裏切り」を出す
                     return Card.BETRAY;
@@ -66,11 +64,9 @@ public class TeamG4C {
                 }
             }
             // パターン③：相手の「協力」率が70%以上
-            // System.out.println("→ 相手の「協力」率が70%以上 → 協力を出す");
             return Card.COOPERATE;
         }
         // 81～100ターン
-        // System.out.println("相手の「協力」回数（1〜80ターン）: " + opponentCooperateCount);
         if(turn <= 100) {
             // パターン①：相手の「協力」回数が59回以下
             // パターン②：相手の「協力」回数が60回以上
