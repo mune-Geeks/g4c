@@ -8,7 +8,6 @@ import jp.co.c4c.IteratedGame.Card;
 public class TeamG4C {
 
     int totalReward = 0;
-
     /**
      * 報酬計算
      * @param reward
@@ -19,15 +18,88 @@ public class TeamG4C {
 
     /**
      * 作戦1 鈴木＋シヌアン作戦
-     *
-     * @param turn 現在のターン数
-     * @param p1History 自分（プレイヤー1）の行動履歴
-     * @param p2History 相手（プレイヤー2）の行動履歴
-     * @return 次の行動（協力または裏切り）
+     * @param turn
+     * @param p1History
+     * @param p2History
+     * @return
      */
     public Card tactics1(int turn, List<Card> p1History, List<Card> p2History) {
-        Random random = new Random(); // 確率的な選択のためのランダム生成器
+        final int TACTICS1_1_TURN_LIMIT = 100;
+        if (turn <= TACTICS1_1_TURN_LIMIT) {
+            return tactics1_1(turn, p1History, p2History);
+        }
+        return tactics1_2(turn, p1History, p2History);
+    }
 
+    /**
+     * 作戦1-1 鈴木作戦
+     * @param turn
+     * @param p1History
+     * @param p2History
+     * @return
+     */
+    public Card tactics1_1(int turn, List<Card> p1History, List<Card> p2History) {
+        final int EARLY_TURN_LIMIT = 10;
+        final double COOPERATE_RATE_LOW = 0.3;
+        final double COOPERATE_RATE_HIGH = 0.7;
+
+        // 1～10ターン
+        if (turn <= EARLY_TURN_LIMIT) {
+            return Card.COOPERATE;
+        }
+
+        // 11～80ターン
+        int opponentCooperateCount = 0;
+        for (int i = 0; i < p2History.size(); i++) {
+            // 81ターン以降はカウントしない
+            if (i > 80) { break; }
+            Card p2Move = p2History.get(i);
+            if (p2Move == Card.COOPERATE) {
+                opponentCooperateCount++;
+            }
+        }
+
+        if (turn <= 80) { // 相手の「協力」率（1～前回ターン数までの合計）によって3パターンの行動を切り替える
+            // 相手の「協力」率を算出
+            double coopRatio = (double) opponentCooperateCount / turn; // opponentCooperateCountをdoubleに変換すれば小数の計算ができるようになる
+
+            // パターン①：相手の「協力」率が30%未満
+            if (coopRatio < COOPERATE_RATE_LOW) {
+                return Card.BETRAY;
+            }
+            // パターン②：相手の「協力」率が30%以上70％未満
+            if (coopRatio < COOPERATE_RATE_HIGH) {
+                Card lastMyMove = p1History.get(p1History.size() -1);
+
+                if (lastMyMove == Card.COOPERATE) { // 自分の前回の行動が「協力」→「裏切り」を出す
+                    return Card.BETRAY;
+                } else { // 自分の前回の行動が「裏切り」→「協力」を出す
+                    return Card.COOPERATE;
+                }
+            }
+            // パターン③：相手の「協力」率が70%以上
+            return Card.COOPERATE;
+        }
+        // 81～100ターン
+        if(turn <= 100) {
+            // パターン①：相手の「協力」回数が59回以下
+            // パターン②：相手の「協力」回数が60回以上
+            return (opponentCooperateCount <= 59) ? Card.COOPERATE : Card.BETRAY;
+        }
+
+        // この分岐には到達しないはずだが、安全のためCOOPERATEを返す
+        return Card.COOPERATE;
+    }
+
+    /**
+     * 作戦1-2 シヌアン作戦
+     * @param turn
+     * @param p1History
+     * @param p2History
+     * @return
+     */
+    public Card tactics1_2(int turn, List<Card> p1History, List<Card> p2History) {
+        Random random = new Random(); // 確率的な選択のためのランダム生成器
         // --- フェーズ切り替えのターン境界値を定義 ---
         final int PHASE1_2_START = 106; // フェーズ1-2の開始ターン
         final int PHASE1_3_START = 131; // フェーズ1-3の開始ターン
@@ -57,7 +129,6 @@ public class TeamG4C {
             final int EVALUATION_WINDOW = 10; // 評価対象とする直近ターン数
             final double HIGH_TRUST_THRESHOLD = 0.7; // 高信頼度の閾値（70%）
             final double MEDIUM_TRUST_THRESHOLD = 0.5; // 中信頼度の閾値（50%）
-
             final int HIGH_TRUST_COOP_RATE = 85; // 高信頼時の協力確率（85%）
             final int MEDIUM_TRUST_COOP_RATE = 50; // 中信頼時の協力確率（50%）
             final int LOW_TRUST_COOP_RATE = 25; // 低信頼時の協力確率（25%）
@@ -73,7 +144,6 @@ public class TeamG4C {
                     cooperationCount++; // 協力していたらカウントを増やす
                 }
             }
-
             // 協力率を計算（0.0〜1.0の値）
             double cooperationRatio = (double) cooperationCount / Math.min(EVALUATION_WINDOW, historySize);
 
@@ -194,31 +264,131 @@ public class TeamG4C {
     }
 
     /**
-     * 作戦2 吉田作戦
-     *
+     * 作戦2　吉田作戦
      * @param turn
      * @param p1History
      * @param p2History
      * @return
      */
     public Card tactics2(int turn, List<Card> p1History, List<Card> p2History) {
-        // 今はランダムで返す
-        Random random = new Random();
-        return random.nextBoolean() ? Card.COOPERATE : Card.BETRAY;
+
+        // フェーズ1
+        final int PHESE1_END_TURN = 50;
+
+        // フェーズ2で使用するしきい値
+        final int COOPERATION_THRESHOLD = 25;
+
+        // フェーズ3
+        final int PHESE3_STR_TURN = 52;
+
+        // 合計協力回数
+        int cooperateCount = 0;
+
+        // 協力率
+        double cooperateRate = 0.00;
+
+        // 連続協力回数
+        int consecutiveCooperateCount = 0;
+
+        // 連続裏切り回数
+        int consecutiveBetrayalCount = 0;
+
+        // 相手の協力
+        final double COOPERATION_RATE_THRESHOLD = 0.5;
+
+        // 直近3ターン
+        final int RECENT_TURN_COUNT = 3;
+
+        // フェーズ1
+        if (turn <= PHESE1_END_TURN) {
+            return Card.BETRAY;
+        }
+
+        // 相手の協力回数をカウント
+        for (int i = 0; i < p2History.size(); i++) {
+            if (p2History.get(i) == Card.COOPERATE) {
+                cooperateCount += 1;
+            }
+
+            // フェーズ3のときの直近3ターンの結果をカウント
+            if (turn >= PHESE3_STR_TURN - RECENT_TURN_COUNT) {
+                if (p2History.get(i) == Card.COOPERATE) {
+                    consecutiveCooperateCount += 1;
+                } else {
+                    consecutiveBetrayalCount += 1;
+                }
+            }
+        }
+
+        // フェーズ2
+        if (turn == PHESE1_END_TURN + 1) {
+            // 相手の協力回数が25回以下だった場合、裏切り
+            if (cooperateCount <= COOPERATION_THRESHOLD) {
+                return Card.BETRAY;
+            } else {
+                return Card.COOPERATE;
+            }
+        }
+
+        // フェーズ3
+        cooperateRate = (double) cooperateCount / p2History.size();
+
+        // 協力率が50%以上だった場合
+        if (cooperateRate >= COOPERATION_RATE_THRESHOLD) {
+            if (consecutiveBetrayalCount == RECENT_TURN_COUNT) {
+                return Card.BETRAY;
+            }
+            return Card.COOPERATE;
+        } else {
+            if (consecutiveCooperateCount == RECENT_TURN_COUNT) {
+                return Card.COOPERATE;
+            }
+            return Card.BETRAY;
+        }
     }
 
     /**
-     * 作戦3 錦作戦
-     *
+     * 作戦3　錦作戦
      * @param turn
      * @param p1History
      * @param p2History
      * @return
      */
     public Card tactics3(int turn, List<Card> p1History, List<Card> p2History) {
-        // 今はランダムで返す
-        Random random = new Random();
-        return random.nextBoolean() ? Card.COOPERATE : Card.BETRAY;
+
+        // １ターン目は「協力」のカードを出す
+        if (turn == 1) {
+            return Card.COOPERATE;
+        }
+
+        // 怒りポイントの下限値
+        final int ANGER_POINTS_MIN = 0;
+        // 怒りポイントの上限値
+        final int ANGER_POINTS_MAX = 3;
+        // 怒りのライン
+        final int ANGER_THRESHOLD = 1;
+
+        // 怒りポイント初期値を設定
+        int angerPoints = 0;
+
+        // 相手の行動履歴を取得して怒りポイントを計算(ANGER_POINTS_MIN～ANGER_POINTS_MAXで変動)
+        for (Card p2Card : p2History) {
+            // 協力なら－１、裏切りなら＋１
+            angerPoints += p2Card == Card.COOPERATE ? -1 : +1;
+
+            // 怒りポイントが－１以下なら０を設定
+            if (angerPoints < ANGER_POINTS_MIN) {
+                angerPoints = ANGER_POINTS_MIN;
+            }
+            // 怒りポイントが４以上なら３を設定
+            if (angerPoints > ANGER_POINTS_MAX) {
+                angerPoints = ANGER_POINTS_MAX;
+            }
+        }
+
+        // 怒りポイントがANGER_THRESHOLDを超えたら「裏切り」のカードを出す
+        return angerPoints > ANGER_THRESHOLD ? Card.BETRAY : Card.COOPERATE;
+
     }
 
 }
