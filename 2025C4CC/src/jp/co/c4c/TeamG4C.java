@@ -27,9 +27,9 @@ public class TeamG4C {
         final int TACTICS1_1_TURN_LIMIT = 100;
 
         if (turn <= TACTICS1_1_TURN_LIMIT) {
-            return tactics1_1(TACTICS1_1_TURN_LIMIT, p1History, p2History);
+            return tactics1_1(turn, p1History, p2History);
         }
-        return tactics1_2(TACTICS1_1_TURN_LIMIT, p1History, p2History);
+        return tactics1_2(turn, p1History, p2History);
     }
 
     /**
