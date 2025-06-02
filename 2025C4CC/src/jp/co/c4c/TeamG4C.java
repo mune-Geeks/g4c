@@ -15,6 +15,7 @@ public class TeamG4C {
     public void addReward(int reward) {
         totalReward += reward;
     }
+
     /**
      * 作戦1 鈴木＋シヌアン作戦
      * @param turn
@@ -23,6 +24,22 @@ public class TeamG4C {
      * @return
      */
     public Card tactics1(int turn, List<Card> p1History, List<Card> p2History) {
+        final int TACTICS1_1_TURN_LIMIT = 100;
+
+        if (turn <= TACTICS1_1_TURN_LIMIT) {
+            return tactics1_1(TACTICS1_1_TURN_LIMIT, p1History, p2History);
+        }
+        return tactics1_2(TACTICS1_1_TURN_LIMIT, p1History, p2History);
+    }
+
+    /**
+     * 作戦1-1 鈴木作戦
+     * @param turn
+     * @param p1History
+     * @param p2History
+     * @return
+     */
+    public Card tactics1_1(int turn, List<Card> p1History, List<Card> p2History) {
         // 1～100ターン：鈴木の作戦
         final int EARLY_TURN_LIMIT = 10;
         final double COOPERATE_RATE_LOW = 0.3;
@@ -55,7 +72,6 @@ public class TeamG4C {
             // パターン②：相手の「協力」率が30%以上70％未満
             if (coopRatio < COOPERATE_RATE_HIGH) {
                 Card lastMyMove = p1History.get(p1History.size() -1);
-
                 if (lastMyMove == Card.COOPERATE) { // 自分の前回の行動が「協力」→「裏切り」を出す
                     return Card.BETRAY;
                 } else { // 自分の前回の行動が「裏切り」→「協力」を出す
@@ -65,15 +81,24 @@ public class TeamG4C {
             // パターン③：相手の「協力」率が70%以上
             return Card.COOPERATE;
         }
-        // 81～100ターン
-        if (turn <= 100) {
-            // パターン①：相手の「協力」回数が59回以下
-            // パターン②：相手の「協力」回数が60回以上
-            return (opponentCooperateCount <= 59) ? Card.COOPERATE : Card.BETRAY;
+        // パターン①：相手の「協力」回数が59回以下
+        if (opponentCooperateCount <= 59) {
+            return Card.COOPERATE;
+        } else { // パターン②：相手の「協力」回数が60回以上
+            return Card.BETRAY;
         }
+    }
 
-        // シヌアン作戦 変数
+    /**
+     * 作戦1-2 シヌアン作戦
+     * @param turn
+     * @param p1History
+     * @param p2History
+     * @return
+     */
+    public Card tactics1_2(int turn, List<Card> p1History, List<Card> p2History) {
         Random random = new Random(); // 確率的な選択のためのランダム生成器
+
         // --- フェーズ切り替えのターン境界値を定義 ---
         final int PHASE1_2_START = 106; // フェーズ1-2の開始ターン
         final int PHASE1_3_START = 131; // フェーズ1-3の開始ターン
@@ -83,7 +108,6 @@ public class TeamG4C {
 
         // --- フェーズ1: ターン101-150の処理 ---
         if (turn < PHASE2_START) {
-
             // --- フェーズ1-1: ターン101-105は必ず協力 ---
             // 相手の基本的な反応パターンを観察するための準備期間
             if (turn < PHASE1_2_START) {
@@ -103,6 +127,7 @@ public class TeamG4C {
             final int EVALUATION_WINDOW = 10; // 評価対象とする直近ターン数
             final double HIGH_TRUST_THRESHOLD = 0.7; // 高信頼度の閾値（70%）
             final double MEDIUM_TRUST_THRESHOLD = 0.5; // 中信頼度の閾値（50%）
+
             final int HIGH_TRUST_COOP_RATE = 85; // 高信頼時の協力確率（85%）
             final int MEDIUM_TRUST_COOP_RATE = 50; // 中信頼時の協力確率（50%）
             final int LOW_TRUST_COOP_RATE = 25; // 低信頼時の協力確率（25%）
@@ -118,6 +143,7 @@ public class TeamG4C {
                     cooperationCount++; // 協力していたらカウントを増やす
                 }
             }
+
             // 協力率を計算（0.0〜1.0の値）
             double cooperationRatio = (double) cooperationCount / Math.min(EVALUATION_WINDOW, historySize);
 
