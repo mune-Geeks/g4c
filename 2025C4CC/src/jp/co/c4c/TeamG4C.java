@@ -40,7 +40,6 @@ public class TeamG4C {
      * @return
      */
     public Card tactics1_1(int turn, List<Card> p1History, List<Card> p2History) {
-        // 1～100ターン：鈴木の作戦
         final int EARLY_TURN_LIMIT = 10;
         final double COOPERATE_RATE_LOW = 0.3;
         final double COOPERATE_RATE_HIGH = 0.7;
@@ -81,8 +80,9 @@ public class TeamG4C {
             // パターン③：相手の「協力」率が70%以上
             return Card.COOPERATE;
         }
-        // パターン①：相手の「協力」回数が59回以下
-        if (opponentCooperateCount <= 59) {
+
+        // 81～100ターン
+        if (opponentCooperateCount <= 59) { // パターン①：相手の「協力」回数が59回以下
             return Card.COOPERATE;
         } else { // パターン②：相手の「協力」回数が60回以上
             return Card.BETRAY;
