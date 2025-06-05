@@ -1,5 +1,3 @@
-package jp.co.c4c;
-
 import java.util.List;
 import java.util.Random;
 
@@ -25,6 +23,7 @@ public class TeamG4C {
      */
     public Card tactics1(int turn, List<Card> p1History, List<Card> p2History) {
         final int TACTICS1_1_TURN_LIMIT = 100;
+
         if (turn <= TACTICS1_1_TURN_LIMIT) {
             return tactics1_1(turn, p1History, p2History);
         }
@@ -70,7 +69,6 @@ public class TeamG4C {
             // パターン②：相手の「協力」率が30%以上70％未満
             if (coopRatio < COOPERATE_RATE_HIGH) {
                 Card lastMyMove = p1History.get(p1History.size() -1);
-
                 if (lastMyMove == Card.COOPERATE) { // 自分の前回の行動が「協力」→「裏切り」を出す
                     return Card.BETRAY;
                 } else { // 自分の前回の行動が「裏切り」→「協力」を出す
@@ -80,15 +78,13 @@ public class TeamG4C {
             // パターン③：相手の「協力」率が70%以上
             return Card.COOPERATE;
         }
-        // 81～100ターン
-        if(turn <= 100) {
-            // パターン①：相手の「協力」回数が59回以下
-            // パターン②：相手の「協力」回数が60回以上
-            return (opponentCooperateCount <= 59) ? Card.COOPERATE : Card.BETRAY;
-        }
 
-        // この分岐には到達しないはずだが、安全のためCOOPERATEを返す
-        return Card.COOPERATE;
+        // 81～100ターン
+        if (opponentCooperateCount <= 59) { // パターン①：相手の「協力」回数が59回以下
+            return Card.COOPERATE;
+        } else { // パターン②：相手の「協力」回数が60回以上
+            return Card.BETRAY;
+        }
     }
 
     /**
@@ -100,23 +96,23 @@ public class TeamG4C {
      */
     public Card tactics1_2(int turn, List<Card> p1History, List<Card> p2History) {
         Random random = new Random(); // 確率的な選択のためのランダム生成器
-        // --- フェーズ切り替えのターン境界値を定義 ---
+
+        // フェーズ切り替えのターン境界値を定義
         final int PHASE1_2_START = 106; // フェーズ1-2の開始ターン
         final int PHASE1_3_START = 131; // フェーズ1-3の開始ターン
         final int PHASE2_START = 151; // フェーズ2の開始ターン
         final int PHASE3_START = 156; // フェーズ3の開始ターン
         final int PHASE4_START = 161; // フェーズ4の開始ターン
 
-        // --- フェーズ1: ターン101-150の処理 ---
+        // フェーズ1: ターン101-150の処理
         if (turn < PHASE2_START) {
-
-            // --- フェーズ1-1: ターン101-105は必ず協力 ---
+            // フェーズ1-1: ターン101-105は必ず協力
             // 相手の基本的な反応パターンを観察するための準備期間
             if (turn < PHASE1_2_START) {
                 return Card.COOPERATE; // 無条件で協力を選択
             }
 
-            // --- フェーズ1-2: ターン106-130は協力2回→裏切り1回のパターン繰り返し ---
+            // フェーズ1-2: ターン106-130は協力2回→裏切り1回のパターン繰り返し
             // 相手がパターンを学習するかどうかをテストする
             if (turn < PHASE1_3_START) {
                 final Card[] COOPERATION_PATTERN = { Card.COOPERATE, Card.COOPERATE, Card.BETRAY };
@@ -124,7 +120,7 @@ public class TeamG4C {
                 return COOPERATION_PATTERN[patternIndex]; // パターンに従って選択
             }
 
-            // --- フェーズ1-3: ターン131-150は信頼度ベースの確率的戦略 ---
+            // フェーズ1-3: ターン131-150は信頼度ベースの確率的戦略
             // 直近10ターンの相手の協力率を分析して次の行動を決定
             final int EVALUATION_WINDOW = 10; // 評価対象とする直近ターン数
             final double HIGH_TRUST_THRESHOLD = 0.7; // 高信頼度の閾値（70%）
@@ -144,7 +140,8 @@ public class TeamG4C {
                     cooperationCount++; // 協力していたらカウントを増やす
                 }
             }
-            // 協力率を計算（0.0〜1.0の値）
+
+            // 協力率を計算（0.0～1.0の値）
             double cooperationRatio = (double) cooperationCount / Math.min(EVALUATION_WINDOW, historySize);
 
             // 信頼レベルに基づいて協力確率を決定
@@ -160,13 +157,13 @@ public class TeamG4C {
             }
         }
 
-        // --- フェーズ2: ターン151-155は全て協力 ---
+        // フェーズ2: ターン151-155は全て協力
         // 相手の行動を記録してフェーズ3での判断材料にする
         if (turn < PHASE3_START) {
             return Card.COOPERATE; // 観察期間として無条件で協力
         }
 
-        // --- フェーズ3: ターン156-160の処理 ---
+        // フェーズ3: ターン156-160の処理
         // フェーズ2での相手の行動を分析して戦略を調整
         if (turn < PHASE4_START) {
             final int COOPERATION_THRESHOLD = 4; // 協力と判断する最低回数
@@ -195,7 +192,7 @@ public class TeamG4C {
             return (betrayalCount > BETRAYAL_THRESHOLD) ? Card.BETRAY : Card.COOPERATE;
         }
 
-        // --- フェーズ4: ターン161以降の処理 ---
+        // フェーズ4: ターン161以降の処理
         // 151ターン目から現在までの累積裏切り回数で戦略を決定
 
         // 151ターン目から直前ターンまでの相手の裏切り累積回数を計算
@@ -345,7 +342,7 @@ public class TeamG4C {
      * @return
      */
     public Card tactics3(int turn, List<Card> p1History, List<Card> p2History) {
-        // １ターン目は「協力」のカードを出す
+        // 1ターン目は「協力」のカードを出す
         if (turn == 1) {
             return Card.COOPERATE;
         }
@@ -362,14 +359,14 @@ public class TeamG4C {
 
         // 相手の行動履歴を取得して怒りポイントを計算(ANGER_POINTS_MIN～ANGER_POINTS_MAXで変動)
         for (Card p2Card : p2History) {
-            // 協力なら－１、裏切りなら＋１
+            // 協力なら-1、裏切りなら+1
             angerPoints += p2Card == Card.COOPERATE ? -1 : +1;
 
-            // 怒りポイントが－１以下なら０を設定
+            // 怒りポイントが-1以下なら0を設定
             if (angerPoints < ANGER_POINTS_MIN) {
                 angerPoints = ANGER_POINTS_MIN;
             }
-            // 怒りポイントが４以上なら３を設定
+            // 怒りポイントが4以上なら3を設定
             if (angerPoints > ANGER_POINTS_MAX) {
                 angerPoints = ANGER_POINTS_MAX;
             }
@@ -377,7 +374,6 @@ public class TeamG4C {
 
         // 怒りポイントがANGER_THRESHOLDを超えたら「裏切り」のカードを出す
         return angerPoints > ANGER_THRESHOLD ? Card.BETRAY : Card.COOPERATE;
-
     }
 
 }
