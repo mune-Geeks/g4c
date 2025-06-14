@@ -259,6 +259,7 @@ public class TeamG4C {
         if (isRecentFourCooperations) {
             return Card.COOPERATE;
         }
+
         // それ以外は15%の確率で「協力」、85%の確率で「裏切り」
         return (random.nextInt(100) < PATTERN4_COOP_RATE) ? Card.COOPERATE : Card.BETRAY;
     }
@@ -376,7 +377,6 @@ public class TeamG4C {
 
         // 怒りポイントがANGER_THRESHOLDを超えたら「裏切り」のカードを出す
         return angerPoints > ANGER_THRESHOLD ? Card.BETRAY : Card.COOPERATE;
-
     }
 
 }
